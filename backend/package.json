@@ -1,21 +1,15 @@
 {
   "name": "mi-primer-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "API de autenticación para sistema de red social y juegos",
   "main": "index.js",
-  "scripts": {
+"scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "jburgob",
   "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "pg": "^8.18.0"
-  }
+  "type": "commonjs"
 }

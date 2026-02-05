@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Juego Cloud - Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="card">
+        <h2 id="titulo">Bienvenido</h2>
+        
+        <div id="auth-form">
+            <input type="text" id="user" placeholder="Usuario" required>
+            <input type="password" id="pass" placeholder="Contraseña" required>
+            <button class="btn-primary" onclick="auth('login')">Entrar</button>
+            <button class="btn-secondary" onclick="auth('register')">Crear Cuenta</button>
+        </div>
+
+        <div id="game-zone" style="display:none;">
+            <h3>Puntos: <span id="puntos">0</span></h3>
+            <button class="btn-primary" onclick="sumarPunto()">¡Ganar 10 Puntos!</button>
+            <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+        </div>
+        
+        <div id="status">Esperando conexión...</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
