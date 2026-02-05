@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Juego Cloud</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
+        input { width: 100%; margin: 10px 0; padding: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #6200ee; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #3700b3; }
+        #status { margin-top: 20px; color: #555; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Login del Juego</h2>
+        <input type="text" id="user" placeholder="Usuario">
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button onclick="login()">Entrar al Sistema</button>
+        
+        <hr>
+        
+        <h3>Puntos: <span id="puntos">0</span></h3>
+        <button id="btnSumar" onclick="sumarPunto()" disabled>¡Ganar 10 Puntos!</button>
+        
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const API_URL = "https://backend-juego-27xy.onrender.com";
+        let miToken = "";
+
+        async function login() {
+            const usuario = document.getElementById('user').value;
+            const password = document.getElementById('pass').value;
+            const status = document.getElementById('status');
+
+            status.innerText = "Conectando con Render...";
+
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password })
+            });
+
+            const data = await res.json();
+
+            if (data.token) {
+                miToken = data.token;
+                status.innerText = "¡Login exitoso!";
+                document.getElementById('btnSumar').disabled = false;
+                // Al entrar, pedimos el perfil para ver los puntos actuales
+                verPerfil();
+            } else {
+                status.innerText = "Error: " + data.mensaje;
+            }
+        }
+
+        async function verPerfil() {
+            const res = await fetch(`${API_URL}/perfil`, {
+                headers: { 'authorization': miToken }
+            });
+            const data = await res.json();
+            document.getElementById('puntos').innerText = data.tus_puntos;
+        }
+
+        async function sumarPunto() {
+            const res = await fetch(`${API_URL}/sumar-puntos`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'authorization': miToken 
+                },
+                body: JSON.stringify({ cantidad: 10 })
+            });
+            const data = await res.json();
+            document.getElementById('puntos').innerText = data.nuevos_puntos;
+            document.getElementById('status').innerText = "¡Puntos guardados en la nube!";
+        }
+    </script>
+</body>
+</html>
