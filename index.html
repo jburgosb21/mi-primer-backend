@@ -2,82 +2,130 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mi Juego Cloud</title>
+    <title>Mi Juego Cloud - Pro</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
-        input { width: 100%; margin: 10px 0; padding: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #6200ee; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #3700b3; }
-        #status { margin-top: 20px; color: #555; font-size: 0.9em; }
+        /* Estilos mejorados */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        input { width: 100%; margin: 8px 0; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-primary { background: #6200ee; color: white; }
+        .btn-primary:hover { background: #3700b3; }
+        .btn-secondary { background: #03dac6; color: #000; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; padding: 10px; border-radius: 5px; font-size: 0.85em; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>Login del Juego</h2>
-        <input type="text" id="user" placeholder="Usuario">
-        <input type="password" id="pass" placeholder="Contraseña">
-        <button onclick="login()">Entrar al Sistema</button>
+        <h2 id="titulo">Bienvenido</h2>
         
-        <hr>
+        <div id="auth-form">
+            <input type="text" id="user" placeholder="Usuario" required>
+            <input type="password" id="pass" placeholder="Contraseña" required>
+            <button class="btn-primary" onclick="auth('login')">Entrar</button>
+            <button class="btn-secondary" onclick="auth('register')">Crear Cuenta</button>
+        </div>
+
+        <div id="game-zone" style="display:none;">
+            <h3>Puntos: <span id="puntos">0</span></h3>
+            <button class="btn-primary" onclick="sumarPunto()">¡Ganar 10 Puntos!</button>
+            <button style="background:#ff5252; color:white;" onclick="logout()">Cerrar Sesión</button>
+        </div>
         
-        <h3>Puntos: <span id="puntos">0</span></h3>
-        <button id="btnSumar" onclick="sumarPunto()" disabled>¡Ganar 10 Puntos!</button>
-        
-        <p id="status"></p>
+        <div id="status">Esperando conexión...</div>
     </div>
 
     <script>
         const API_URL = "https://backend-juego-27xy.onrender.com";
-        let miToken = "";
+        
+        // Al cargar la página, ver si ya tenemos un token guardado
+        window.onload = () => {
+            const tokenGuardado = localStorage.getItem('mi_token');
+            if (tokenGuardado) {
+                showGame(tokenGuardado);
+            }
+        };
 
-        async function login() {
+        async function auth(tipo) {
             const usuario = document.getElementById('user').value;
             const password = document.getElementById('pass').value;
             const status = document.getElementById('status');
 
-            status.innerText = "Conectando con Render...";
+            if (!usuario || !password) return mensaje("Escribe usuario y clave", "error");
 
-            const res = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, password })
-            });
+            try {
+                status.innerText = "Procesando...";
+                const res = await fetch(`${API_URL}/${tipo}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, password })
+                });
 
-            const data = await res.json();
+                const data = await res.json();
 
-            if (data.token) {
-                miToken = data.token;
-                status.innerText = "¡Login exitoso!";
-                document.getElementById('btnSumar').disabled = false;
-                // Al entrar, pedimos el perfil para ver los puntos actuales
-                verPerfil();
-            } else {
-                status.innerText = "Error: " + data.mensaje;
+                if (res.ok) {
+                    if (tipo === 'login') {
+                        localStorage.setItem('mi_token', data.token);
+                        showGame(data.token);
+                    } else {
+                        mensaje("¡Registro exitoso! Ya puedes entrar", "success");
+                    }
+                } else {
+                    mensaje(data.mensaje, "error");
+                }
+            } catch (e) {
+                mensaje("Error de conexión con el servidor", "error");
             }
         }
 
-        async function verPerfil() {
-            const res = await fetch(`${API_URL}/perfil`, {
-                headers: { 'authorization': miToken }
-            });
-            const data = await res.json();
-            document.getElementById('puntos').innerText = data.tus_puntos;
+        function showGame(token) {
+            document.getElementById('auth-form').style.display = 'none';
+            document.getElementById('game-zone').style.display = 'block';
+            document.getElementById('status').innerText = "Sesión activa";
+            verPerfil(token);
+        }
+
+        async function verPerfil(token) {
+            try {
+                const res = await fetch(`${API_URL}/perfil`, {
+                    headers: { 'authorization': token }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('puntos').innerText = data.tus_puntos;
+                } else {
+                    logout(); // Si el token no sirve, sacamos al usuario
+                }
+            } catch (e) { console.error("Error al cargar perfil"); }
         }
 
         async function sumarPunto() {
-            const res = await fetch(`${API_URL}/sumar-puntos`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'authorization': miToken 
-                },
-                body: JSON.stringify({ cantidad: 10 })
-            });
-            const data = await res.json();
-            document.getElementById('puntos').innerText = data.nuevos_puntos;
-            document.getElementById('status').innerText = "¡Puntos guardados en la nube!";
+            const token = localStorage.getItem('mi_token');
+            try {
+                const res = await fetch(`${API_URL}/sumar-puntos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'authorization': token },
+                    body: JSON.stringify({ cantidad: 10 })
+                });
+                const data = await res.json();
+                document.getElementById('puntos').innerText = data.nuevos_puntos;
+                mensaje("¡Puntos sincronizados!", "success");
+            } catch (e) { mensaje("Error al guardar puntos", "error"); }
+        }
+
+        function logout() {
+            localStorage.removeItem('mi_token');
+            location.reload(); // Recarga la página para volver al inicio
+        }
+
+        function mensaje(texto, clase) {
+            const s = document.getElementById('status');
+            s.innerText = texto;
+            s.className = clase;
         }
     </script>
 </body>
